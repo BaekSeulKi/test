@@ -1,0 +1,65 @@
+version: '3'
+services:
+  db:
+    image: mongo:4.2.0
+    container_name: db
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    environment:
+      - DBHOST=mongodb://db:27017
+      - DBNAME=movie_data
+    volumes:
+      - './data/db:/data/db'
+    restart: always
+
+  # movie-data:
+  #   image: movie-data
+  #   build:
+  #     context: ./movie-data
+  #     dockerfile: Dockerfile
+  #   container_name: movie-data
+  #   volumes:
+  #     - ./movie-data/src:/usr/src/app/src:z
+  #   ports:
+  #     - "4002:80"
+  #   user: root
+  #   environment:
+  #     - PORT=80
+  #     - DBHOST=mongodb://db:27017
+  #     - AWS_SECRET_ACCESS_KEY=+ukc8Rt6X23ouJ2rkjRx358HDH4VjdIDrrqbvqw2
+  #     - AWS_ACCESS_KEY=AKIA4JCZIACQO7R66EXP
+  #     - REGION=ap-northeast-2
+  #   depends_on:
+  #     - db
+  
+  movie:
+    image: movie
+    build:
+      context: ./movie
+      dockerfile: Dockerfile
+    container_name: movie
+    volumes:
+      - ./movie/src:/usr/src/app/src:z
+    ports:
+      - "4001:80"
+    user: root
+    environment:
+      - PORT=80
+      - DBHOST=mongodb://db:27017
+    depends_on:
+      - db
+  
+  frontend:
+    image: frontend
+    build:
+      context: ./frontend/test-app
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - ./frontend/src:/usr/src/app/src:z
+    ports:
+      - "8300:80"
+    user: root
+    
