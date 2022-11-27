@@ -1,5 +1,5 @@
 def frontend_services = ['frontend']
-def backend_services = ['movie']
+
 
 
 
@@ -38,16 +38,16 @@ pipeline {
   stages {
     stage ('Build and Test') {
       steps {
-        Greet(backend_services)
+     
         build_services(frontend_services)
-        build_services(backend_services)
+       
       }
     }  
    
     stage('Cleanup') {
       steps{
         clean_up(frontend_services)
-        clean_up(backend_services)
+ 
       }
     }
   }
