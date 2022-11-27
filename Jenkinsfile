@@ -1,0 +1,119 @@
+def frontend_services = ['frontend']
+def backend_services = ['movie']
+
+
+
+def COLOR_MAP = [
+    'SUCCESS': 'good', 
+    'FAILURE': 'danger',
+]
+
+def build_services(services) {
+    for(int i = 0; i < services.size(); i++){
+        sh "docker build -t $DOCKER_REPO/${services[i]}:$BUILD_NUMBER --file ./${services[i]}/Dockerfile.prod ./${services[i]}"
+    }
+}
+
+
+def push_services(services) {
+    for(int i = 0; i < services.size(); i++){
+        sh "docker push $DOCKER_REPO/${services[i]}:$BUILD_NUMBER"
+    }
+}
+
+def clean_up(services) {
+    for(int i = 0; i < services.size(); i++){
+        sh "docker rmi $DOCKER_REPO/${services[i]}:$BUILD_NUMBER"
+    }
+}
+def Greet(list) {
+    for(int i = 0; i < list.size(); i++){
+        sh "echo hello ${list[i]}"
+    }
+}
+
+properties([pipelineTriggers([githubPush()])])
+pipeline {
+  
+  stages {
+    stage ('Build and Test') {
+      steps {
+        Greet(backend_services)
+        build_services(frontend_services)
+        build_services(backend_services)
+      }
+    }  
+    stage ('Artefact') {
+      steps {
+        withAWS(credentials:'aws-credentials') {
+         
+          push_services(frontend_services)
+          push_services(backend_services)
+        }  
+      }
+    }   
+    stage('Cleanup') {
+      steps{
+        clean_up(frontend_services)
+        clean_up(backend_services)
+      }
+    }
+  }
+}
+
+
+
+
+
+    // CHART_DIR="$JENKINS_HOME/workspace/helm-integration/helm"
+    // HELM_RELEASE_NAME = "api-service"
+    // ENV= """${sh(
+  	// 	returnStdout: true,
+  	// 	script: 'declare -n ENV=${GIT_BRANCH}_env ; echo "$ENV"'
+    // ).trim()}"""
+    
+    // stage ('Deploy') {
+    //   steps {
+    //     sh '''
+    //     declare -n CLUSTER_NAME=${ENV}_cluster
+    //     aws eks --region $AWS_DEFAULT_REGION  update-kubeconfig --name ${CLUSTER_NAME}
+    //     kubectl config set-context --current --namespace=$ENV
+    //     helm upgrade --install ${HELM_RELEASE_NAME} ${CHART_DIR}/${HELM_RELEASE_NAME}/ \
+    //     --set image.repository=${DOCKER_REPO} \
+    //     --set image.tag=${BUILD_NUMBER} \
+    //     --set environment=-${ENV} \
+    //     -f ${CHART_DIR}/${HELM_RELEASE_NAME}/values.yaml \
+    //     --namespace ${ENV}
+    //     '''
+    //   }
+    // }
+        
+    // slack notification configuration 
+    //   stage('Error') {
+    //     // when doError is equal to 1, return an error
+    //     when {
+    //         expression { doError == '1' }
+    //     }
+    //     steps {
+    //         echo "Failure :("
+    //         error "Test failed on purpose, doError == str(1)"
+    //     }
+    // }
+    // stage('Success') {
+    //   // when doError is equal to 0, just print a simple message
+    //   when {
+    //       expression { doError == '0' }
+    //   }
+    //   steps {
+    //       echo "Success :)"
+    //   }
+    // }
+
+    // Post-build actions
+  // post {
+  //     always {
+  //         slackSend channel: '#jenkins-notification',
+  //             color: COLOR_MAP[currentBuild.currentResult],
+  //             message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} More info at: $RUN_DISPLAY_URL"
+  //     }
+  // }
