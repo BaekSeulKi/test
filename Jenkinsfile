@@ -34,7 +34,7 @@ def Greet(list) {
 
 properties([pipelineTriggers([githubPush()])])
 pipeline {
-  
+  agent any  
   stages {
     stage ('Build and Test') {
       steps {
@@ -43,15 +43,7 @@ pipeline {
         build_services(backend_services)
       }
     }  
-    stage ('Artefact') {
-      steps {
-        withAWS(credentials:'aws-credentials') {
-         
-          push_services(frontend_services)
-          push_services(backend_services)
-        }  
-      }
-    }   
+   
     stage('Cleanup') {
       steps{
         clean_up(frontend_services)
